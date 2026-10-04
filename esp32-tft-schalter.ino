@@ -29,10 +29,22 @@
 //     false setzen (siehe Datenstruktur SchalterKachel weiter unten).
 // ============================================================================
 
+#include <HTTPClient.h>
+#include <ArduinoJson.h>
+
+extern const char* HA_HOST;
+extern const int   HA_PORT;
+extern const char* HA_TOKEN;
+
+// wie oft der Schalterzustand aus Home Assistant zurueckgelesen wird
+#define SCHALTER_AKTUALISIERUNG_MS 10000   // alle 10 Sekunden
+
+unsigned long schalter_letzte_aktualisierung = 0;
+
 // ----------------------------------------------------------------------------
 //  SCHALTER-NAMEN  (hier Klartext-Bezeichnung nach Belieben aendern)
 // ----------------------------------------------------------------------------
-const char* SCHALTER_NAME_1 = "Schalter 1";
+const char* SCHALTER_NAME_1 = "Licht";
 const char* SCHALTER_NAME_2 = "Schalter 2";
 const char* SCHALTER_NAME_3 = "Schalter 3";
 const char* SCHALTER_NAME_4 = "Schalter 4";
@@ -42,7 +54,8 @@ const char* SCHALTER_NAME_6 = "Schalter 6";
 // ----------------------------------------------------------------------------
 //  ENTITY-IDS  (hier durch die echten Home-Assistant-Entity-IDs ersetzen)
 // ----------------------------------------------------------------------------
-const char* SCHALTER_ENTITY_1 = "switch.schalter_1_beispiel";
+
+const char* SCHALTER_ENTITY_1 = "switch.smart_plug";
 const char* SCHALTER_ENTITY_2 = "switch.schalter_2_beispiel";
 const char* SCHALTER_ENTITY_3 = "switch.schalter_3_beispiel";
 const char* SCHALTER_ENTITY_4 = "switch.schalter_4_beispiel";
