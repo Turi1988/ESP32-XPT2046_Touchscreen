@@ -30,3 +30,10 @@ Verbesserung:
 - Einträge sortiert nach Punktzahl oder bestleistung
 - wenn Spiel geschafft wurde, Wird der erreichte punktestand (snake,pipe mania) oder benötigte zeit ( sudoku ) zusammen mit      dem aktuellen datum in die highscore liste gespeichert. Bei sudoku soll es eine  highscore liste pro schwierigkeit grad.
 
+ideen:
+Mini-Farmsimulator
+Turmverteidigungsspiel
+Benachrichtigungs-seite
+Tic-Tac-Toe
+
+
