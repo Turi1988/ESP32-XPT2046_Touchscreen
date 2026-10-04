@@ -2,11 +2,20 @@
 ESP32 Projekt zum verbinden eines 2.8 tft 240x320 ili9341 XPT2046_Touchscreen. 
 
 Was noch fehlt:
--secrets datei
+~~- secrets datei~~ ✅ secrets.h + secrets_example.h
 
--ota installer via IDE und weboberfläche
+~~- ota installer via IDE und weboberfläche~~ ✅ erledigt (esp32-tft-netzwerk.ino)
+~~- zugriff auf SD karte über netzwerk~~ ✅ erledigt (esp32-tft-netzwerk.ino)
 
--zugriff auf SD karte über netzwerk
+### Netzwerk-Dienste (neu)
+Nach WLAN-Verbindung stehen bereit:
+
+| Dienst | Adresse | Beschreibung |
+|--------|---------|--------------|
+| Status | `http://esp32-tft.local/` oder `http://<IP>/` | Übersicht + Links |
+| SD-Karte | `http://esp32-tft.local/sd` | Dateiliste + Download |
+| Web-OTA | `http://esp32-tft.local/update` | Firmware per Browser flashen |
+| ArduinoOTA | Netzwerk-Port in der Arduino-IDE | Direkt aus der IDE updaten |
 
 Spiele:
 -Ideen - Bricks, Tetris
@@ -27,19 +36,5 @@ Probleme:
 Fehler:
 -Screensaver Wetter anzeige ist noch Platzhalter, soll wechseln zwichen Uhrzeit, Wetter in Bilk und Wetter 3 Tage vorhersage
 -Füge der Uhr im Screensaver ein Datum hinzu
-
-
-erledigt:
-
-Funktion
-Adresse / Nutzung
-ArduinoOTA
-In der Arduino-IDE unter „Port“ den Netzwerk-Port esp32-tft wählen → normal hochladen
-Web-OTA
-Browser: http://esp32-tft.local/update oder http://<IP>/update → .bin auswählen und flashen
-SD-Zugriff
-Browser: http://esp32-tft.local/sd → Dateiliste + Download-Links
-Statusseite
-http://esp32-tft.local/ → IP, SSID, Heap, Links zu den Diensten
 
 

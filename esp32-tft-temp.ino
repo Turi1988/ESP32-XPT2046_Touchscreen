@@ -17,13 +17,9 @@
 #include <ArduinoJson.h>
 
 // ----------------------------------------------------------------------------
-//  HOME-ASSISTANT-ZUGANGSDATEN
-//  HA_TOKEN bitte durch den eigenen Long-Lived Access Token ersetzen
-//  (Home Assistant -> Profil -> ganz unten "Langlebige Zugriffstoken" -> Token erstellen)
+//  HOME-ASSISTANT-ZUGANG
+//  HA_BASE_URL und HA_TOKEN kommen aus secrets.h (nicht hier hardcoden!)
 // ----------------------------------------------------------------------------
-const char* HA_HOST  = "192.168.178.101";
-const int   HA_PORT  = 8123;
-const char* HA_TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJkMjFhMWQ0MjliOGQ0ZTUzYjZlMzU5ZDczNTU3MzQ1ZiIsImlhdCI6MTc5MDUzOTU1OSwiZXhwIjoyMTA1ODk5NTU5fQ.bQEfLbBnKI7S_PY6PXeichhncpx6mVmAQ6HC_Iry9rE";
 
 // wie oft die Sensorwerte abgefragt werden
 #define TEMPERATUR_AKTUALISIERUNG_MS 60000   // alle 60 Sekunden
@@ -158,8 +154,7 @@ float ha_sensorwert_holen(const char* entity_id) {
   if (entity_id == nullptr || strlen(entity_id) == 0) return NAN;
 
   HTTPClient http;
-  String url = "http://" + String(HA_HOST) + ":" + String(HA_PORT) +
-               "/api/states/" + String(entity_id);
+  String url = String(HA_BASE_URL) + "/api/states/" + String(entity_id);
 
   http.begin(url);
   http.addHeader("Authorization", "Bearer " + String(HA_TOKEN));

@@ -2,47 +2,18 @@
 //  SCHALTER-SEITE (view_index == 4)
 //  Eigene Datei: esp32-tft-schalter.ino
 //
-//  NOTIZEN FUER DIE HOME-ASSISTANT-VERKNUEPFUNG (bitte vor Aktivierung lesen):
+//  Hier anpassen:
+//    - SCHALTER_NAME_1 … 6   Anzeigenamen auf dem Display
+//    - SCHALTER_ENTITY_1 … 6 Entity-IDs aus Home Assistant
 //
-//  1) Fuer jeden Schalter unten bei "ENTITY-IDS" die Platzhalter-Zeile
-//     (z.B. "switch.schalter_1_beispiel") durch die echte Entity-ID aus
-//     Home Assistant ersetzen (zu finden unter Einstellungen -> Geraete &
-//     Dienste -> Entitaeten, oder Entwicklerwerkzeuge -> Zustaende).
-//  2) Den Anzeigenamen jedes Schalters (aktuell "Schalter 1" bis "Schalter 6")
-//     im Bereich "SCHALTER-NAMEN" auf den gewuenschten Klartext aendern.
-//  3) Aktuell wird nur der lokale Zustand (an/aus) im ESP32 gehalten und
-//     farblich dargestellt - es findet NOCH KEINE echte Kommunikation mit
-//     Home Assistant statt. Sobald die API- bzw. MQTT-Anbindung im
-//     Hauptprogramm steht, muss beim Antippen zusaetzlich der Befehl
-//     "Zustand umschalten" an die jeweilige Entity-ID gesendet werden
-//     (z.B. per Home Assistant API: Dienst homeassistant.toggle mit der
-//     jeweiligen Entity-ID) - siehe TODO in schalter_touch_behandeln().
-//  4) Ebenso sollte der angezeigte Zustand idealerweise regelmaessig aus
-//     Home Assistant abgefragt werden (z.B. alle paar Sekunden per API),
-//     damit die Anzeige stimmt, auch wenn der Schalter anderswo (App,
-//     Sprachassistent) umgestellt wurde. Aktuell simuliert
-//     schalter_zustaende_aktualisieren() das nur als TODO-Platzhalter.
-//  5) Falls ein Schalter kein einfacher an/aus-Schalter ist, sondern z.B.
-//     ein Skript oder eine Szene ausloesen soll: dafuer reicht ebenfalls
-//     ein Toggle- bzw. Trigger-Aufruf, aber ohne dauerhaften an/aus-Zustand -
-//     in dem Fall ggf. hat_dauerzustand bei der jeweiligen Kachel auf
-//     false setzen (siehe Datenstruktur SchalterKachel weiter unten).
+//  Sensible Daten (WLAN, HA-Token, HA-URL) liegen nur in secrets.h
 // ============================================================================
 
 #include <HTTPClient.h>
-#include <ArduinoJson.h>
-
-extern const char* HA_HOST;
-extern const int   HA_PORT;
-extern const char* HA_TOKEN;
-
-// wie oft der Schalterzustand aus Home Assistant zurueckgelesen wird
-#define SCHALTER_AKTUALISIERUNG_MS 10000   // alle 10 Sekunden
-
-unsigned long schalter_letzte_aktualisierung = 0;
+#include <WiFi.h>
 
 // ----------------------------------------------------------------------------
-//  SCHALTER-NAMEN  (hier Klartext-Bezeichnung nach Belieben aendern)
+//  ANZEIGENAMEN (Klartext auf den Kacheln)
 // ----------------------------------------------------------------------------
 const char* SCHALTER_NAME_1 = "Licht";
 const char* SCHALTER_NAME_2 = "Schalter 2";
@@ -52,15 +23,15 @@ const char* SCHALTER_NAME_5 = "Schalter 5";
 const char* SCHALTER_NAME_6 = "Schalter 6";
 
 // ----------------------------------------------------------------------------
-//  ENTITY-IDS  (hier durch die echten Home-Assistant-Entity-IDs ersetzen)
+//  ENTITY-IDS (Home Assistant: Einstellungen -> Entitaeten)
+//  Beispiele: "light.wohnzimmer", "switch.steckdose_kueche"
 // ----------------------------------------------------------------------------
-
-const char* SCHALTER_ENTITY_1 = "switch.smart_plug";
-const char* SCHALTER_ENTITY_2 = "switch.schalter_2_beispiel";
-const char* SCHALTER_ENTITY_3 = "switch.schalter_3_beispiel";
-const char* SCHALTER_ENTITY_4 = "switch.schalter_4_beispiel";
-const char* SCHALTER_ENTITY_5 = "switch.schalter_5_beispiel";
-const char* SCHALTER_ENTITY_6 = "switch.schalter_6_beispiel";
+const char* SCHALTER_ENTITY_1 = "light.wohnzimmer";
+const char* SCHALTER_ENTITY_2 = "switch.schalter_2";
+const char* SCHALTER_ENTITY_3 = "switch.schalter_3";
+const char* SCHALTER_ENTITY_4 = "switch.schalter_4";
+const char* SCHALTER_ENTITY_5 = "switch.schalter_5";
+const char* SCHALTER_ENTITY_6 = "switch.schalter_6";
 
 // ----------------------------------------------------------------------------
 //  FARBEN
@@ -70,26 +41,24 @@ const char* SCHALTER_ENTITY_6 = "switch.schalter_6_beispiel";
 #define FARBE_RAHMEN_GEDRUECKT    tft.color565(255, 200, 0)
 
 // ----------------------------------------------------------------------------
-//  DATENSTRUKTUR EINER SCHALTER-KACHEL
+//  DATENSTRUKTUR
 // ----------------------------------------------------------------------------
 struct SchalterKachel {
   int x, y, breite, hoehe;
   const char* name;
   const char* entity_id;
   bool zustand_an;
-  bool hat_dauerzustand;   // true = an/aus-Schalter, false = Taster/Szene
+  bool hat_dauerzustand;   // true = an/aus, false = nur Taster
 };
 
 SchalterKachel schalter_kacheln[6];
 
-// merkt sich, welche Kachel gerade gedrueckt/angetippt wird, fuer die
-// farbliche Rahmen-Hervorhebung
 int schalter_gedrueckt_index = -1;
 unsigned long schalter_gedrueckt_zeit = 0;
-#define SCHALTER_GEDRUECKT_ANZEIGEDAUER 200  // ms
+#define SCHALTER_GEDRUECKT_ANZEIGEDAUER 250
 
 // ----------------------------------------------------------------------------
-//  LAYOUT AUFBAUEN (einmalig beim Start aufrufen, z.B. in setup())
+//  LAYOUT
 // ----------------------------------------------------------------------------
 void schalterseite_layout_aufbauen() {
   int tile_w = 90;
@@ -99,59 +68,116 @@ void schalterseite_layout_aufbauen() {
   int start_x = (SCREEN_W - (tile_w * 3 + gap_x * 2)) / 2;
   int start_y = HEADER_HOEHE + 15;
 
-  schalter_kacheln[0] = { start_x, start_y, tile_w, tile_h,
-    SCHALTER_NAME_1, SCHALTER_ENTITY_1, false, true };
+  const char* namen[6] = {
+    SCHALTER_NAME_1, SCHALTER_NAME_2, SCHALTER_NAME_3,
+    SCHALTER_NAME_4, SCHALTER_NAME_5, SCHALTER_NAME_6
+  };
+  const char* entities[6] = {
+    SCHALTER_ENTITY_1, SCHALTER_ENTITY_2, SCHALTER_ENTITY_3,
+    SCHALTER_ENTITY_4, SCHALTER_ENTITY_5, SCHALTER_ENTITY_6
+  };
 
-  schalter_kacheln[1] = { start_x + (tile_w + gap_x), start_y, tile_w, tile_h,
-    SCHALTER_NAME_2, SCHALTER_ENTITY_2, false, true };
-
-  schalter_kacheln[2] = { start_x + (tile_w + gap_x) * 2, start_y, tile_w, tile_h,
-    SCHALTER_NAME_3, SCHALTER_ENTITY_3, false, true };
-
+  for (int i = 0; i < 3; i++) {
+    schalter_kacheln[i] = {
+      start_x + i * (tile_w + gap_x), start_y, tile_w, tile_h,
+      namen[i], entities[i], false, true
+    };
+  }
   int y2 = start_y + tile_h + gap_y;
-
-  schalter_kacheln[3] = { start_x, y2, tile_w, tile_h,
-    SCHALTER_NAME_4, SCHALTER_ENTITY_4, false, true };
-
-  schalter_kacheln[4] = { start_x + (tile_w + gap_x), y2, tile_w, tile_h,
-    SCHALTER_NAME_5, SCHALTER_ENTITY_5, false, true };
-
-  schalter_kacheln[5] = { start_x + (tile_w + gap_x) * 2, y2, tile_w, tile_h,
-    SCHALTER_NAME_6, SCHALTER_ENTITY_6, false, true };
-}
-
-// ----------------------------------------------------------------------------
-//  SCHALTER-SEITE ZEICHNEN
-//  Bei view_index == 4 aus bildschirm_komplett_neu_zeichnen() aufrufen
-//  (Kopfzeile mit Uhrzeit und Home-Button wird wie gewohnt vorher vom
-//  Hauptprogramm gezeichnet, dunkelblauer Standard-Hintergrund gilt weiter)
-// ----------------------------------------------------------------------------
-void schalterseite_zeichnen() {
-  for (int i = 0; i < 6; i++) {
-    SchalterKachel &k = schalter_kacheln[i];
-
-    uint16_t grundfarbe = k.zustand_an ? FARBE_SCHALTER_AN : FARBE_SCHALTER_AUS;
-    uint16_t rahmenfarbe = (i == schalter_gedrueckt_index) ? FARBE_RAHMEN_GEDRUECKT : FARBE_RAHMEN;
-
-    tft.fillRoundRect(k.x, k.y, k.breite, k.hoehe, 8, grundfarbe);
-    tft.drawRoundRect(k.x, k.y, k.breite, k.hoehe, 8, rahmenfarbe);
-    if (i == schalter_gedrueckt_index) {
-      // zusaetzliche zweite Umrandung fuer deutlichere farbliche Abhebung
-      tft.drawRoundRect(k.x + 1, k.y + 1, k.breite - 2, k.hoehe - 2, 7, FARBE_RAHMEN_GEDRUECKT);
-    }
-
-    tft.setTextDatum(MC_DATUM);
-    tft.setTextColor(FARBE_TEXT, grundfarbe);
-    tft.drawString(k.name, k.x + k.breite / 2, k.y + k.hoehe / 2 - 10, 1);
-
-    tft.setTextColor(FARBE_TEXT, grundfarbe);
-    tft.drawString(k.zustand_an ? "AN" : "AUS", k.x + k.breite / 2, k.y + k.hoehe / 2 + 15, 1);
+  for (int i = 0; i < 3; i++) {
+    schalter_kacheln[3 + i] = {
+      start_x + i * (tile_w + gap_x), y2, tile_w, tile_h,
+      namen[3 + i], entities[3 + i], false, true
+    };
   }
 }
 
 // ----------------------------------------------------------------------------
-//  TOUCH-BEHANDLUNG FUER DIE SCHALTER-SEITE
-//  In touch_abfragen() aufrufen, wenn view_index == 4
+//  ZEICHNEN
+// ----------------------------------------------------------------------------
+static void schalter_kachel_zeichnen(int i) {
+  SchalterKachel &k = schalter_kacheln[i];
+  uint16_t grundfarbe = k.zustand_an ? FARBE_SCHALTER_AN : FARBE_SCHALTER_AUS;
+  uint16_t rahmenfarbe = (i == schalter_gedrueckt_index) ? FARBE_RAHMEN_GEDRUECKT : FARBE_RAHMEN;
+
+  tft.fillRoundRect(k.x, k.y, k.breite, k.hoehe, 8, grundfarbe);
+  tft.drawRoundRect(k.x, k.y, k.breite, k.hoehe, 8, rahmenfarbe);
+  if (i == schalter_gedrueckt_index) {
+    tft.drawRoundRect(k.x + 1, k.y + 1, k.breite - 2, k.hoehe - 2, 7, FARBE_RAHMEN_GEDRUECKT);
+  }
+
+  tft.setTextDatum(MC_DATUM);
+  tft.setTextColor(FARBE_TEXT, grundfarbe);
+  tft.drawString(k.name, k.x + k.breite / 2, k.y + k.hoehe / 2 - 10, 1);
+  tft.drawString(k.zustand_an ? "AN" : "AUS", k.x + k.breite / 2, k.y + k.hoehe / 2 + 15, 1);
+}
+
+void schalterseite_zeichnen() {
+  for (int i = 0; i < 6; i++) {
+    schalter_kachel_zeichnen(i);
+  }
+}
+
+// ----------------------------------------------------------------------------
+//  HOME ASSISTANT API (Token + URL nur aus secrets.h)
+// ----------------------------------------------------------------------------
+bool ha_entity_toggle(const char* entity_id) {
+  if (WiFi.status() != WL_CONNECTED) {
+    Serial.println("HA: kein WLAN");
+    return false;
+  }
+  if (entity_id == nullptr || entity_id[0] == '\0') return false;
+  if (strcmp(HA_TOKEN, "DEIN_HA_LONG_LIVED_TOKEN") == 0) {
+    Serial.println("HA: Token noch Platzhalter – nur lokaler Zustand");
+    return false;
+  }
+
+  String eid(entity_id);
+  int punkt = eid.indexOf('.');
+  String domain = (punkt > 0) ? eid.substring(0, punkt) : String("switch");
+  String url = String(HA_BASE_URL) + "/api/services/" + domain + "/toggle";
+
+  HTTPClient http;
+  http.setTimeout(4000);
+  http.begin(url);
+  http.addHeader("Authorization", String("Bearer ") + HA_TOKEN);
+  http.addHeader("Content-Type", "application/json");
+
+  String body = String("{\"entity_id\":\"") + entity_id + "\"}";
+  int code = http.POST(body);
+  Serial.printf("HA toggle %s -> HTTP %d\n", entity_id, code);
+  http.end();
+  return (code >= 200 && code < 300);
+}
+
+bool ha_entity_ist_an(const char* entity_id, bool* out_an) {
+  if (WiFi.status() != WL_CONNECTED || out_an == nullptr) return false;
+  if (strcmp(HA_TOKEN, "DEIN_HA_LONG_LIVED_TOKEN") == 0) return false;
+
+  String url = String(HA_BASE_URL) + "/api/states/" + entity_id;
+  HTTPClient http;
+  http.setTimeout(3000);
+  http.begin(url);
+  http.addHeader("Authorization", String("Bearer ") + HA_TOKEN);
+
+  int code = http.GET();
+  bool ok = false;
+  if (code == 200) {
+    String payload = http.getString();
+    if (payload.indexOf("\"state\":\"on\"") >= 0) {
+      *out_an = true;
+      ok = true;
+    } else if (payload.indexOf("\"state\":\"off\"") >= 0) {
+      *out_an = false;
+      ok = true;
+    }
+  }
+  http.end();
+  return ok;
+}
+
+// ----------------------------------------------------------------------------
+//  TOUCH
 // ----------------------------------------------------------------------------
 void schalterseite_touch_behandeln() {
   for (int i = 0; i < 6; i++) {
@@ -165,35 +191,49 @@ void schalterseite_touch_behandeln() {
       if (k.hat_dauerzustand) {
         k.zustand_an = !k.zustand_an;
       }
+      schalter_kachel_zeichnen(i);
 
-      // TODO: sobald die Home-Assistant-Anbindung im Hauptprogramm steht,
-      // hier den Toggle-Befehl fuer k.entity_id an Home Assistant senden,
-      // z.B. per API-Dienst homeassistant.toggle mit entity_id = k.entity_id
+      bool ha_ok = ha_entity_toggle(k.entity_id);
+      if (ha_ok) {
+        bool echt = k.zustand_an;
+        if (ha_entity_ist_an(k.entity_id, &echt)) {
+          k.zustand_an = echt;
+          schalter_kachel_zeichnen(i);
+        }
+      }
 
-      schalterseite_zeichnen();
+      Serial.printf("Schalter %d (%s) -> %s (HA %s)\n",
+                    i, k.name, k.zustand_an ? "AN" : "AUS",
+                    ha_ok ? "ok" : "lokal");
       return;
     }
   }
 }
 
-// ----------------------------------------------------------------------------
-//  GEDRUECKT-RAHMEN NACH KURZER ZEIT WIEDER ENTFERNEN
-//  Regelmaessig in loop() aufrufen, wenn view_index == 4
-// ----------------------------------------------------------------------------
 void schalterseite_blink_zuruecksetzen() {
   if (schalter_gedrueckt_index != -1 &&
       millis() - schalter_gedrueckt_zeit > SCHALTER_GEDRUECKT_ANZEIGEDAUER) {
+    int i = schalter_gedrueckt_index;
     schalter_gedrueckt_index = -1;
-    schalterseite_zeichnen();
+    schalter_kachel_zeichnen(i);
   }
 }
 
-// ----------------------------------------------------------------------------
-//  ZUSTAENDE AUS HOME ASSISTANT AKTUALISIEREN
-//  TODO-Platzhalter: sobald API-/MQTT-Anbindung steht, hier fuer jede
-//  Entity-ID den aktuellen Zustand abfragen und schalter_kacheln[i].zustand_an
-//  entsprechend setzen, danach schalterseite_zeichnen() aufrufen
-// ----------------------------------------------------------------------------
 void schalterzustaende_aktualisieren() {
-  // TODO: Home-Assistant-Abfrage ergaenzen
+  if (WiFi.status() != WL_CONNECTED) return;
+  if (strcmp(HA_TOKEN, "DEIN_HA_LONG_LIVED_TOKEN") == 0) return;
+
+  bool geaendert = false;
+  for (int i = 0; i < 6; i++) {
+    bool an = false;
+    if (ha_entity_ist_an(schalter_kacheln[i].entity_id, &an)) {
+      if (schalter_kacheln[i].zustand_an != an) {
+        schalter_kacheln[i].zustand_an = an;
+        geaendert = true;
+      }
+    }
+  }
+  if (geaendert && view_index == 4) {
+    schalterseite_zeichnen();
+  }
 }

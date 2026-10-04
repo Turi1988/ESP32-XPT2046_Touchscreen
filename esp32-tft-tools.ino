@@ -308,6 +308,9 @@ uint16_t lampe_farbe() {
 }
 
 void lampe_starten() {
+  // Kopfleiste neu zeichnen, damit Home-Button immer erreichbar bleibt
+  header_zeichnen();
+
   uint16_t farbe = lampe_farbe();
   tft.fillRect(0, HEADER_HOEHE, SCREEN_W, SCREEN_H - HEADER_HOEHE, farbe);
   tft.setTextDatum(MC_DATUM);
@@ -315,7 +318,7 @@ void lampe_starten() {
   tft.setTextColor(text, farbe);
   const char* label = (lampe_stufe == 0) ? "AUS" : (lampe_stufe == 1 ? "DIMM" : "HELL");
   tft.drawString(label, SCREEN_W / 2, SCREEN_H / 2, 4);
-  tft.drawString("antippen", SCREEN_W / 2, SCREEN_H / 2 + 28, 1);
+  tft.drawString("antippen zum Umschalten", SCREEN_W / 2, SCREEN_H / 2 + 28, 1);
 }
 
 void lampe_verlassen() {

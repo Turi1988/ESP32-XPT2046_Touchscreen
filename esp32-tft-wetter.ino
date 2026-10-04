@@ -12,7 +12,7 @@
 //    POST /api/services/weather/get_forecasts?return_response
 //    (neuere Home-Assistant-Versionen liefern Vorschauen nicht mehr als
 //    einfaches Attribut, sondern nur noch ueber diesen Weg)
-//  HA_HOST / HA_PORT / HA_TOKEN sind bereits in esp32-tft-temp.ino definiert.
+//  HA_BASE_URL / HA_TOKEN kommen aus secrets.h
 // ============================================================================
 
 #include <HTTPClient.h>
@@ -175,7 +175,7 @@ void wetterwerte_aktualisieren() {
   if (WiFi.status() != WL_CONNECTED) return;
 
   HTTPClient http;
-  String url = "http://" + String(HA_HOST) + ":" + String(HA_PORT) +
+  String url = String(HA_BASE_URL) +
                "/api/states/" + String(ENTITY_WETTER);
 
   http.begin(url);
@@ -230,7 +230,7 @@ void wettervorschau_aktualisieren() {
   if (WiFi.status() != WL_CONNECTED) return;
 
   HTTPClient http;
-  String url = "http://" + String(HA_HOST) + ":" + String(HA_PORT) +
+  String url = String(HA_BASE_URL) +
                "/api/services/weather/get_forecasts?return_response";
 
   http.begin(url);
