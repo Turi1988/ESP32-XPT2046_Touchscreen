@@ -26,7 +26,7 @@ const char* SCHALTER_NAME_6 = "Schalter 6";
 //  ENTITY-IDS (Home Assistant: Einstellungen -> Entitaeten)
 //  Beispiele: "light.wohnzimmer", "switch.steckdose_kueche"
 // ----------------------------------------------------------------------------
-const char* SCHALTER_ENTITY_1 = "light.wohnzimmer";
+const char* SCHALTER_ENTITY_1 = "switch.smart_plug";
 const char* SCHALTER_ENTITY_2 = "switch.schalter_2";
 const char* SCHALTER_ENTITY_3 = "switch.schalter_3";
 const char* SCHALTER_ENTITY_4 = "switch.schalter_4";
