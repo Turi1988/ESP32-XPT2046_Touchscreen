@@ -2,7 +2,7 @@
 ESP32 Projekt zum verbinden eines 2.8 tft 240x320 ili9341 XPT2046_Touchscreen. 
 
 Was noch fehlt:
-~~- secrets datei~~ ✅ secrets.h + secrets_example.h
+
 
 ~~- ota installer via IDE und weboberfläche~~ ✅ erledigt (esp32-tft-netzwerk.ino)
 ~~- zugriff auf SD karte über netzwerk~~ ✅ erledigt (esp32-tft-netzwerk.ino)
@@ -28,13 +28,5 @@ Bluetooth: Es können Geräte in der nähe gescannt werden und diese Angezeigt
 Verbesserung:
 - Highscore datei für jedes Spiel auf sd karte
 - Einträge sortiert nach Punktzahl oder bestleistung
-- wenn Spiel geschafft wurde, Wird der erreichte punktestand (snake,pipe mania) oder benötigte zeit ( sudoku ) zusammen mit      dem aktuellen datum in die highscore liste gespeichert. Bei sudoku soll es eine  highscore liste pro schwierigkeit geben
-
-Probleme:
-- snake, essen
-
-Fehler:
--Screensaver Wetter anzeige ist noch Platzhalter, soll wechseln zwichen Uhrzeit, Wetter in Bilk und Wetter 3 Tage vorhersage
--Füge der Uhr im Screensaver ein Datum hinzu
-
+- wenn Spiel geschafft wurde, Wird der erreichte punktestand (snake,pipe mania) oder benötigte zeit ( sudoku ) zusammen mit      dem aktuellen datum in die highscore liste gespeichert. Bei sudoku soll es eine  highscore liste pro schwierigkeit grad.
 
