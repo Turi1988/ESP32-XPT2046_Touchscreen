@@ -29,3 +29,17 @@ Fehler:
 -Füge der Uhr im Screensaver ein Datum hinzu
 
 
+erledigt:
+
+Funktion
+Adresse / Nutzung
+ArduinoOTA
+In der Arduino-IDE unter „Port“ den Netzwerk-Port esp32-tft wählen → normal hochladen
+Web-OTA
+Browser: http://esp32-tft.local/update oder http://<IP>/update → .bin auswählen und flashen
+SD-Zugriff
+Browser: http://esp32-tft.local/sd → Dateiliste + Download-Links
+Statusseite
+http://esp32-tft.local/ → IP, SSID, Heap, Links zu den Diensten
+
+
