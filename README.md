@@ -3,7 +3,8 @@ ESP32 Projekt zum verbinden eines 2.8 tft 240x320 ili9341 XPT2046_Touchscreen.
 
 Was noch fehlt:
 -secrets datei
--ota
+-ota installer via IDE und weboberfläche
+-zugriff auf SD karte über netzwerk
 
 Spiele:
 -Ideen - Bricks, Tetris
