@@ -29,6 +29,10 @@ Verbesserung:
 - Highscore datei für jedes Spiel auf sd karte
 - Einträge sortiert nach Punktzahl oder bestleistung
 - wenn Spiel geschafft wurde, Wird der erreichte punktestand (snake,pipe mania) oder benötigte zeit ( sudoku ) zusammen mit      dem aktuellen datum in die highscore liste gespeichert. Bei sudoku soll es eine  highscore liste pro schwierigkeit grad.
+Programme Verbesserung:
+-Datei Browser:
+Daten hochladen einbauen 
+Wenn man zb. ein Bild runterlädt, kommt immer eine Datei namens download.bin und nicht das eigentliche Bild. Auch der datei name sollte nicht immer gleich sein 
 
 ideen:
 Mini-Farmsimulator
