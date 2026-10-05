@@ -38,4 +38,12 @@ Tic-Tac-Toe
 
 Eier uhr mit auswahl der ei größe und garpunkt
 
+Symbole für obere statusleiste:
+Status:
+-Wlan
+-Bluetooth
+-SD Karte
+-Akku Ladezustand
+
+
 
