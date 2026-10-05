@@ -17,9 +17,6 @@ Nach WLAN-Verbindung stehen bereit:
 | Web-OTA | `http://esp32-tft.local/update` | Firmware per Browser flashen |
 | ArduinoOTA | Netzwerk-Port in der Arduino-IDE | Direkt aus der IDE updaten |
 
-Spiele:
--Ideen - Bricks, Tetris
-
 Programme:
 - eine zweite Programme seite. oben in der Leiste wird mittig 1/2 und 2/2 als seitenzahl gezeigt. Bei antippen wechselt er auf die andere programmseite
 - Ideen - Programmkachel Netzwerk. Auswahl zwichen WLAN und Bluetooth.
@@ -56,6 +53,7 @@ Spiele:
 -brauchen hauptmenü
 -Tetris Vorauswahl ( + Wert - ) um fallgeschw. ab Start zu ändern
 Spielfeld ist immernoch gequetscht
+- Bricks, Tetris
 
 
 
