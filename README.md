@@ -35,6 +35,8 @@ Mini-Farmsimulator
 Turmverteidigungsspiel
 Benachrichtigungs-seite
 Tic-Tac-Toe
+Uhrzeit / Datum manuell einstellen
+
 
 Eier uhr mit auswahl der ei größe und garpunkt
 
@@ -44,6 +46,14 @@ Status:
 -Bluetooth
 -SD Karte
 -Akku Ladezustand
+-Ota (bisherige entf.)
+
+Spiele:
+-brauchen hauptmenü
+-Tetris Vorauswahl ( + Wert - ) um fallgeschw. ab Start zu ändern
+Spielfeld ist immernoch gequetscht
+
+
 
 
 
